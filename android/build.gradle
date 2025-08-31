@@ -1,0 +1,33 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+        jcenter() // optional, but can stay
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.1.2'
+        classpath 'com.google.gms:google-services:4.4.1' // Firebase plugin
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.buildDir = "../build"
+
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
