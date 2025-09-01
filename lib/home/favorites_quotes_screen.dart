@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Required for Clipboard
+import 'package:flutter/services.dart'; 
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../quotes/quotes_provider.dart';
@@ -21,7 +21,7 @@ class _FavoritesQuotesScreenState extends State<FavoritesQuotesScreen>
     Colors.deepPurple,
     Colors.pinkAccent,
     Colors.lightBlue,
-  ]; // cycle colors for cards
+  ];
 
   @override
   void initState() {

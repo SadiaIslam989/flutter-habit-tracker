@@ -188,7 +188,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Profile Picture Section
+                
                 Center(
                   child: GestureDetector(
                     onTap: _showAvatarPicker,

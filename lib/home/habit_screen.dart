@@ -1,3 +1,4 @@
+import 'dart:async'; 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,12 +17,15 @@ class _HabitScreenState extends State<HabitScreen> {
   final _firestore = FirebaseFirestore.instance;
   DateTime _selectedDate = DateTime.now();
 
-  final List<String> _weekDays = ['Sa', 'Su', 'Mo', 'Tu', 'We', 'Th', 'Fr'];
-  final List<DateTime> _weekDates = List.generate(7, (index) {
+  late final Timer _timer; 
+  final List<String> _weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+  
+  List<DateTime> get _weekDates {
     final now = DateTime.now();
-    final weekStart = now.subtract(Duration(days: now.weekday - 6));
-    return weekStart.add(Duration(days: index));
-  });
+    final startOfWeek = now.subtract(Duration(days: now.weekday % 7));
+    return List.generate(7, (index) => startOfWeek.add(Duration(days: index)));
+  }
 
   Future<void> _toggleHabitCompletion(
       String habitId, Map<String, dynamic> habitData) async {
@@ -48,7 +52,7 @@ class _HabitScreenState extends State<HabitScreen> {
       final alreadyCompletedToday = completionHistory.any((date) {
         final dateStr = date is Timestamp
             ? DateFormat('yyyy-MM-dd').format(date.toDate())
-            : date.toString();
+            : date.toString().substring(0, 10);
         return dateStr == today;
       });
 
@@ -59,15 +63,14 @@ class _HabitScreenState extends State<HabitScreen> {
             backgroundColor: Colors.orange,
           ),
         );
-        return; 
+        return;
       }
 
-      
       completionHistory.add(DateTime.now());
-      int currentStreak = completionHistory.length;
-      bool isCompleted = currentStreak >= 7;
 
-      if (isCompleted) {
+      int currentStreak = (habitData['currentStreak'] ?? 0) + 1;
+
+      if (currentStreak >= 7) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -84,7 +87,7 @@ class _HabitScreenState extends State<HabitScreen> {
           .collection('habits')
           .doc(habitId)
           .update({
-        'completionHistory': completionHistory,
+        'completionHistory': FieldValue.arrayUnion([DateTime.now()]),
         'currentStreak': currentStreak,
       });
 
@@ -104,17 +107,21 @@ class _HabitScreenState extends State<HabitScreen> {
     }
   }
 
-  bool isSameWeek(DateTime date1, DateTime date2) {
-    final d1 = date1.subtract(Duration(days: date1.weekday - 1));
-    final d2 = date2.subtract(Duration(days: date2.weekday - 1));
-    return DateFormat('yyyy-MM-dd').format(d1) ==
-        DateFormat('yyyy-MM-dd').format(d2);
-  }
-
   @override
   void initState() {
     super.initState();
     _checkAndCreateDefaultHabits();
+
+    
+    _timer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel(); 
+    super.dispose();
   }
 
   Future<void> _checkAndCreateDefaultHabits() async {
@@ -134,7 +141,7 @@ class _HabitScreenState extends State<HabitScreen> {
           'creationDate': FieldValue.serverTimestamp(),
           'currentStreak': 0,
           'notes': 'Read for at least 30 minutes',
-          'completionHistory': [], 
+          'completionHistory': [],
           'icon': '📚',
           'color': 0xFFBA68C8,
         },
@@ -194,7 +201,7 @@ class _HabitScreenState extends State<HabitScreen> {
       ),
       body: Column(
         children: [
-        
+          
           Container(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: SingleChildScrollView(
@@ -202,12 +209,11 @@ class _HabitScreenState extends State<HabitScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: _weekDates.map((date) {
-                  final isSelected =
-                      DateFormat('yyyy-MM-dd').format(date) ==
-                          DateFormat('yyyy-MM-dd').format(_selectedDate);
-                  final isToday =
-                      DateFormat('yyyy-MM-dd').format(date) ==
-                          DateFormat('yyyy-MM-dd').format(DateTime.now());
+                  final today = DateTime.now();
+                  final isSelected = DateFormat('yyyy-MM-dd').format(date) ==
+                      DateFormat('yyyy-MM-dd').format(_selectedDate);
+                  final isToday = DateFormat('yyyy-MM-dd').format(date) ==
+                      DateFormat('yyyy-MM-dd').format(today);
 
                   return Padding(
                     padding: const EdgeInsets.only(right: 12),
@@ -220,7 +226,9 @@ class _HabitScreenState extends State<HabitScreen> {
                           color: isSelected
                               ? Theme.of(context).primaryColor
                               : (isToday
-                                  ? Theme.of(context).primaryColor.withOpacity(0.1)
+                                  ? Theme.of(context)
+                                      .primaryColor
+                                      .withOpacity(0.1)
                                   : null),
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -232,7 +240,10 @@ class _HabitScreenState extends State<HabitScreen> {
                                 fontSize: 12,
                                 color: isSelected
                                     ? Colors.white
-                                    : Theme.of(context).textTheme.bodySmall?.color,
+                                    : Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.color,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -240,12 +251,14 @@ class _HabitScreenState extends State<HabitScreen> {
                               date.day.toString(),
                               style: TextStyle(
                                 fontSize: 16,
-                                fontWeight: isSelected || isToday
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
+                                fontWeight:
+                                    isSelected || isToday ? FontWeight.bold : FontWeight.normal,
                                 color: isSelected
                                     ? Colors.white
-                                    : Theme.of(context).textTheme.bodyLarge?.color,
+                                    : Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge
+                                        ?.color,
                               ),
                             ),
                           ],
@@ -257,10 +270,8 @@ class _HabitScreenState extends State<HabitScreen> {
               ),
             ),
           ),
-
           const SizedBox(height: 8),
-
-          // Habits list
+          
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: _firestore
@@ -319,7 +330,7 @@ class _HabitScreenState extends State<HabitScreen> {
                     final isCompletedToday = completionHistory.any((date) {
                       final dateStr = date is Timestamp
                           ? DateFormat('yyyy-MM-dd').format(date.toDate())
-                          : date.toString();
+                          : date.toString().substring(0, 10);
                       return dateStr == today;
                     });
 
@@ -368,8 +379,6 @@ class _HabitScreenState extends State<HabitScreen> {
                               ],
                             ),
                             const SizedBox(width: 16),
-
-                            // Habit details
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,8 +414,6 @@ class _HabitScreenState extends State<HabitScreen> {
                                 ],
                               ),
                             ),
-
-                            // Check button
                             GestureDetector(
                               onTap: () {
                                 _toggleHabitCompletion(

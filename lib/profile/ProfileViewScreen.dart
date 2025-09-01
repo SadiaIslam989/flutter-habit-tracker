@@ -47,6 +47,13 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
     );
   }
 
+  String? _getStringField(dynamic field) {
+    if (field == null) return null;
+    if (field is String) return field;
+    if (field is Map) return field.toString(); 
+    return field.toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     if (user == null) {
@@ -75,6 +82,14 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                 fontSize: 14,
               );
 
+          final displayName = _getStringField(data['displayName']) ?? 'User';
+          final email = _getStringField(data['email']);
+          final gender = _getStringField(data['gender']);
+          final dateOfBirth = _getStringField(data['dateOfBirth']);
+          final height = _getStringField(data['height']);
+          final otherDetails = _getStringField(data['otherDetails']);
+          final avatarUrl = _getStringField(data['avatarUrl']);
+
           return SingleChildScrollView(
             child: Column(
               children: [
@@ -97,10 +112,20 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(60),
-                    child: data['avatarUrl'] != null
-                        ? Image.asset(
-                            data['avatarUrl']!,
+                    child: (avatarUrl != null && avatarUrl.isNotEmpty)
+                        ? Image.network(
+                            avatarUrl,
                             fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) {
+                              return Container(
+                                color: Colors.purple.shade100,
+                                child: const Icon(
+                                  Icons.person,
+                                  size: 60,
+                                  color: Colors.purple,
+                                ),
+                              );
+                            },
                           )
                         : Container(
                             color: Colors.purple.shade100,
@@ -114,7 +139,7 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  data['displayName'] ?? 'User',
+                  displayName,
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -127,24 +152,19 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      if (data['email'] != null &&
-                          data['email'].toString().isNotEmpty)
-                        Text("Email: ${data['email']}", style: textStyle),
-                      if (data['gender'] != null &&
-                          data['gender'].toString().isNotEmpty)
-                        Text("Gender: ${data['gender']}", style: textStyle),
-                      if (data['dateOfBirth'] != null &&
-                          data['dateOfBirth'].toString().isNotEmpty)
-                        Text("DOB: ${data['dateOfBirth']}", style: textStyle),
-                      if (data['height'] != null &&
-                          data['height'].toString().isNotEmpty)
-                        Text("Height: ${data['height']}", style: textStyle),
-                      if (data['otherDetails'] != null &&
-                          data['otherDetails'].toString().isNotEmpty)
+                      if (email != null && email.isNotEmpty)
+                        Text("Email: $email", style: textStyle),
+                      if (gender != null && gender.isNotEmpty)
+                        Text("Gender: $gender", style: textStyle),
+                      if (dateOfBirth != null && dateOfBirth.isNotEmpty)
+                        Text("DOB: $dateOfBirth", style: textStyle),
+                      if (height != null && height.isNotEmpty)
+                        Text("Height: $height", style: textStyle),
+                      if (otherDetails != null && otherDetails.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(top: 6.0),
                           child: Text(
-                            data['otherDetails'],
+                            otherDetails,
                             textAlign: TextAlign.center,
                             style: textStyle,
                           ),
@@ -164,13 +184,13 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                           .get();
                       final profileData = doc.data() ?? {};
                       _editProfile({
-                        'displayName': profileData['displayName'] ?? '',
-                        'gender': profileData['gender'] ?? '',
-                        'dateOfBirth': profileData['dateOfBirth'] ?? '',
-                        'height': profileData['height'] ?? '',
-                        'otherDetails': profileData['otherDetails'] ?? '',
+                        'displayName': _getStringField(profileData['displayName']) ?? '',
+                        'gender': _getStringField(profileData['gender']) ?? '',
+                        'dateOfBirth': _getStringField(profileData['dateOfBirth']) ?? '',
+                        'height': _getStringField(profileData['height']) ?? '',
+                        'otherDetails': _getStringField(profileData['otherDetails']) ?? '',
                         'email': user!.email ?? '',
-                        'avatarUrl': profileData['avatarUrl'],
+                        'avatarUrl': _getStringField(profileData['avatarUrl']) ?? '',
                       });
                     },
                     style: ElevatedButton.styleFrom(
@@ -227,7 +247,6 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                     List<LineChartBarData> lineBars = [];
                     final habitDocs = habitSnapshot.data!.docs;
 
-                    
                     Map<int, Set<String>> tooltipMap = {};
 
                     for (var doc in habitDocs) {
@@ -314,8 +333,9 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                                   if (touchedSpots.isEmpty) return [];
 
                                   return touchedSpots.map((touched) {
-                                    final dayIndex =
-                                        touched.x.round().clamp(0, last7Dates.length - 1);
+                                    final dayIndex = touched.x
+                                        .round()
+                                        .clamp(0, last7Dates.length - 1);
                                     final habitSet = tooltipMap[dayIndex] ?? <String>{};
                                     final count = habitSet.length;
 
