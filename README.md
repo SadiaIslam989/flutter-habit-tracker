@@ -1,16 +1,57 @@
 # habit_tracker
 
-A new Flutter project.
+ A flutter app to help users build routines , track habits and stay motivated.
 
-## Getting Started
+## Features 
 
-This project is a starting point for a Flutter application.
+-**User Authentication**
+  - Register/ login / Logout (Firebase Authrntication)
+  - use email and password to login
+  - user saved with Sharedprefernces
+  
+- **User Profile**
+  - View and edit profile
+  - updates sync instantly across devices
+  - Emain shown as read-only
 
-A few resources to get you started if this is your first Flutter project:
+- **Habits**
+  - shows default habits for new users
+  - create , edit , delete habits
+  - properties : tittle , category , frequency , start date , notes
+  - stored in firestore under `users/{userId}/habits/{habitId}`
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- **Habit Tracking**
+  - daily/weekly completion marking
+  - prevents invalid completion dates
+  - track streaks
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- **Categories**
+  - Health,Study, Fitness, Productivity, Mental Health, Other
+  - shows as tags with icons
+  - filter habits by category
+
+- **Motivational Quotes**
+  - fetched from API - (Quoteable)
+  - save to favorites in firestore
+  - Randomized on refresh
+
+-  **Favorites Screen**
+  - View saved quotes
+  - Option to unfavorite (syncs instantly)
+
+- **Progress Visualization**
+   - line chart for recent progress
+   - last 7 days/ current week chart
+   - updates when habits marked complete
+   - tooltip list
+
+- **Themes**
+   -dark/light theme toggle
+   -applied instantly without restart
+
+  
+
+  ## Author
+
+**Sadia Islam**
+   
