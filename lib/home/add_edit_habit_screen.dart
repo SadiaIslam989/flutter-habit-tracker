@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:habit_tracker/models/habit_category.dart';
 
 class AddEditHabitScreen extends StatefulWidget {
   final Map<String, dynamic>? habit;
@@ -19,14 +20,6 @@ class _AddEditHabitScreenState extends State<AddEditHabitScreen> {
   String? _frequency;
   DateTime? _startDate;
 
-  final List<String> _categories = [
-    'Health',
-    'Mental Health',
-    'Study',
-    'Fitness',
-    'Productivity',
-  ];
-
   final _frequencies = ["Daily", "Weekly"];
 
   @override
@@ -39,11 +32,7 @@ class _AddEditHabitScreenState extends State<AddEditHabitScreen> {
       _startDate = widget.habit!['startDate'] != null
           ? (widget.habit!['startDate'] as Timestamp).toDate()
           : null;
-      _notesController.text = widget.habit!['notes'] ?? ''; 
-
-      if (_category != null && !_categories.contains(_category)) {
-        _categories.add(_category!);
-      }
+      _notesController.text = widget.habit!['notes'] ?? '';
     }
   }
 
@@ -120,7 +109,7 @@ class _AddEditHabitScreenState extends State<AddEditHabitScreen> {
         .doc(widget.habit!['id'])
         .delete();
 
-    Navigator.pop(context); 
+    Navigator.pop(context);
   }
 
   Future<void> _confirmDelete() async {
@@ -224,9 +213,15 @@ class _AddEditHabitScreenState extends State<AddEditHabitScreen> {
             DropdownButtonFormField<String>(
               value: _category,
               decoration: const InputDecoration(labelText: "Category *"),
-              items: _categories.toSet().map((c) => DropdownMenuItem(
-                    value: c,
-                    child: Text(c),
+              items: HabitCategory.predefinedCategories.map((c) => DropdownMenuItem(
+                    value: c.name,
+                    child: Row(
+                      children: [
+                        Icon(c.icon, color: c.color, size: 20),
+                        const SizedBox(width: 10),
+                        Text(c.name),
+                      ],
+                    ),
                   )).toList(),
               onChanged: (val) => setState(() => _category = val),
             ),

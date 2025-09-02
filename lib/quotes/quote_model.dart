@@ -2,11 +2,13 @@ class Quote {
   final String id;
   final String content;
   final String author;
+  final List<String> tags;
 
   Quote({
     required this.id,
     required this.content,
     required this.author,
+    required this.tags,
   });
 
   factory Quote.fromJson(Map<String, dynamic> json) {
@@ -14,6 +16,7 @@ class Quote {
       id: json['_id'] ?? DateTime.now().toIso8601String(),
       content: json['content'] ?? '',
       author: json['author'] ?? 'Unknown',
+      tags: List<String>.from(json['tags'] ?? []),
     );
   }
 
@@ -23,6 +26,7 @@ class Quote {
       'id': id,
       'content': content,
       'author': author,
+      'tags': tags,
     };
   }
 }

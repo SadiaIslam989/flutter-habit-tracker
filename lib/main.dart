@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 
+import 'package:habit_tracker/auth/auth_wrapper.dart';
 import 'firebase_options.dart';
 import 'settings/settings_screen.dart';
 import 'theme/theme_provider.dart';
@@ -46,7 +47,7 @@ class MyApp extends StatelessWidget {
           theme: themeProvider.lightTheme,
           darkTheme: themeProvider.darkTheme,
           themeMode: themeProvider.themeMode,
-          home: const WelcomeScreen(),
+          home: const AuthWrapper(),
           routes: {
             '/login': (_) => const LoginScreen(),
             '/home': (_) => const HomeScreen(),

@@ -167,6 +167,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_gender != null && !['Male', 'Female', 'Other'].contains(_gender)) {
+      _gender = null;
+    }
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -322,9 +325,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
                       elevation: 0,
                     ),
-                    child: const Text(
+                    child: Text(
                       "Save Profile",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      style: TextStyle( 
+                        fontSize: 16, fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      ),
                     ),
                   ),
                 ),

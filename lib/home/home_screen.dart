@@ -4,8 +4,9 @@ import 'package:provider/provider.dart';
 import '../theme/theme_provider.dart';
 import 'habit_screen.dart';
 import 'quotes_screen.dart';
+import 'progress_screen.dart';
 import '../quotes/quotes_provider.dart';
-import 'package:firebase_auth/firebase_auth.dart'; 
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,12 +18,13 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  final Color _appPurple = const Color.fromRGBO(156, 39, 176, 1); 
+  final Color _appPurple = const Color.fromRGBO(156, 39, 176, 1);
   @override
   Widget build(BuildContext context) {
     final List<Widget> screens = [
       const HabitScreen(),
       const QuotesScreen(),
+      const ProgressScreen(),
       const ProfileViewScreen(),
     ];
 
@@ -147,7 +149,8 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             _buildNavBarItem(0, Icons.check_circle_outline, "Habits"),
             _buildNavBarItem(1, Icons.format_quote_outlined, "Quotes"),
-            _buildNavBarItem(2, Icons.person_outline, "Profile"),
+            _buildNavBarItem(2, Icons.show_chart, "Progress"),
+            _buildNavBarItem(3, Icons.person_outline, "Profile"),
           ],
         ),
       ),

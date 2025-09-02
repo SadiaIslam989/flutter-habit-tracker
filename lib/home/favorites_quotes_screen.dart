@@ -84,11 +84,12 @@ class _FavoritesQuotesScreenState extends State<FavoritesQuotesScreen>
 
               final quotes = snapshot.data!.docs
                   .map((doc) {
-                    final quote = Quote.fromJson(doc.data() as Map<String, dynamic>);
+                    final data = doc.data() as Map<String, dynamic>;
                     return Quote(
                       id: doc.id,
-                      content: quote.content,
-                      author: quote.author,
+                      content: data['content'] ?? '',
+                      author: data['author'] ?? 'Unknown',
+                      tags: List<String>.from(data['tags'] ?? []),
                     );
                   })
                   .toList();

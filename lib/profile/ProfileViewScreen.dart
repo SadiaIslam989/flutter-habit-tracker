@@ -200,11 +200,12 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Edit Profile',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onPrimary,
                       ),
                     ),
                   ),
@@ -212,153 +213,7 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                 const SizedBox(height: 40),
 
                 // ===== graph =====
-                const Text(
-                  "Progress Visualization (Last 7 Days)",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color.fromARGB(221, 97, 97, 97),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                  stream: getHabitStream(),
-                  builder: (context, habitSnapshot) {
-                    if (habitSnapshot.connectionState ==
-                        ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    if (!habitSnapshot.hasData ||
-                        habitSnapshot.data!.docs.isEmpty) {
-                      return const Center(
-                          child: Text('No habit progress available.'));
-                    }
-
-                    final now = DateTime.now();
-                    final last7Dates = List.generate(
-                      7,
-                      (i) => DateTime(now.year, now.month, now.day - (6 - i)),
-                    );
-                    final last7Labels = last7Dates
-                        .map((d) => DateFormat('EEE').format(d))
-                        .toList();
-
-                    List<LineChartBarData> lineBars = [];
-                    final habitDocs = habitSnapshot.data!.docs;
-
-                    Map<int, Set<String>> tooltipMap = {};
-
-                    for (var doc in habitDocs) {
-                      final habitData = doc.data();
-                      final history =
-                          List<dynamic>.from(habitData['completionHistory'] ?? []);
-                      final color = Color(habitData['color'] ?? 0xFFBA68C8);
-
-                      List<FlSpot> spots = [];
-                      for (int i = 0; i < last7Dates.length; i++) {
-                        final dateKey =
-                            DateFormat('yyyy-MM-dd').format(last7Dates[i]);
-                        bool doneToday = history.any((date) {
-                          final dateStr = date is Timestamp
-                              ? DateFormat('yyyy-MM-dd').format(date.toDate())
-                              : date.toString();
-                          return dateStr == dateKey;
-                        });
-
-                        if (doneToday) {
-                          tooltipMap.putIfAbsent(i, () => <String>{});
-                          tooltipMap[i]!.add(doc.id);
-                        }
-
-                        spots.add(FlSpot(i.toDouble(), doneToday ? 1 : 0));
-                      }
-
-                      lineBars.add(LineChartBarData(
-                        spots: spots,
-                        isCurved: true,
-                        color: color,
-                        barWidth: 4,
-                        dotData: FlDotData(show: true),
-                        belowBarData: BarAreaData(
-                          show: true,
-                          color: color.withOpacity(0.3),
-                        ),
-                      ));
-                    }
-
-                    return SizedBox(
-                      height: 250,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: LineChart(
-                          LineChartData(
-                            minY: 0,
-                            maxY: 1.5,
-                            titlesData: FlTitlesData(
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  interval: 1,
-                                  getTitlesWidget: (value, meta) {
-                                    int idx = value.toInt();
-                                    if (idx >= 0 && idx < last7Labels.length) {
-                                      return Text(
-                                        last7Labels[idx],
-                                        style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500),
-                                      );
-                                    }
-                                    return const SizedBox.shrink();
-                                  },
-                                ),
-                              ),
-                              leftTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              topTitles: AxisTitles(
-                                  sideTitles: SideTitles(showTitles: false)),
-                              rightTitles: AxisTitles(
-                                  sideTitles: SideTitles(showTitles: false)),
-                            ),
-                            gridData:
-                                FlGridData(show: true, drawVerticalLine: false),
-                            borderData: FlBorderData(show: false),
-                            lineBarsData: lineBars,
-                            lineTouchData: LineTouchData(
-                              handleBuiltInTouches: true,
-                              touchTooltipData: LineTouchTooltipData(
-                                getTooltipItems: (touchedSpots) {
-                                  if (touchedSpots.isEmpty) return [];
-
-                                  return touchedSpots.map((touched) {
-                                    final dayIndex = touched.x
-                                        .round()
-                                        .clamp(0, last7Dates.length - 1);
-                                    final habitSet = tooltipMap[dayIndex] ?? <String>{};
-                                    final count = habitSet.length;
-
-                                    return LineTooltipItem(
-                                      "Habits done: $count",
-                                      const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    );
-                                  }).toList();
-                                },
-                                getTooltipColor: (_) =>
-                                    const Color.fromRGBO(156, 39, 176, 1)
-                                        .withOpacity(0.8),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                const SizedBox.shrink(),
                 const SizedBox(height: 40),
               ],
             ),

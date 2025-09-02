@@ -1,8 +1,9 @@
-import 'dart:async'; 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:habit_tracker/models/habit_category.dart';
 import 'add_edit_habit_screen.dart';
 
 class HabitScreen extends StatefulWidget {
@@ -16,11 +17,11 @@ class _HabitScreenState extends State<HabitScreen> {
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
   DateTime _selectedDate = DateTime.now();
+  String? _selectedCategory;
 
-  late final Timer _timer; 
+  late final Timer _timer;
   final List<String> _weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
-  
   List<DateTime> get _weekDates {
     final now = DateTime.now();
     final startOfWeek = now.subtract(Duration(days: now.weekday % 7));
@@ -112,7 +113,6 @@ class _HabitScreenState extends State<HabitScreen> {
     super.initState();
     _checkAndCreateDefaultHabits();
 
-    
     _timer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) setState(() {});
     });
@@ -120,7 +120,7 @@ class _HabitScreenState extends State<HabitScreen> {
 
   @override
   void dispose() {
-    _timer.cancel(); 
+    _timer.cancel();
     super.dispose();
   }
 
@@ -201,7 +201,6 @@ class _HabitScreenState extends State<HabitScreen> {
       ),
       body: Column(
         children: [
-          
           Container(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: SingleChildScrollView(
@@ -271,14 +270,59 @@ class _HabitScreenState extends State<HabitScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          
+          // Category Filter
+          SizedBox(
+            height: 50,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: ChoiceChip(
+                    label: const Text('All'),
+                    selected: _selectedCategory == null,
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedCategory = null;
+                      });
+                    },
+                  ),
+                ),
+                ...HabitCategory.predefinedCategories.map((category) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    child: ChoiceChip(
+                      label: Text(category.name),
+                      selected: _selectedCategory == category.name,
+                      onSelected: (selected) {
+                        setState(() {
+                          if (selected) {
+                            _selectedCategory = category.name;
+                          }
+                        });
+                      },
+                    ),
+                  );
+                }).toList(),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: _firestore
-                  .collection('users')
-                  .doc(_auth.currentUser?.uid)
-                  .collection('habits')
-                  .snapshots(),
+              stream: _selectedCategory == null
+                  ? _firestore
+                      .collection('users')
+                      .doc(_auth.currentUser?.uid)
+                      .collection('habits')
+                      .snapshots()
+                  : _firestore
+                      .collection('users')
+                      .doc(_auth.currentUser?.uid)
+                      .collection('habits')
+                      .where('category', isEqualTo: _selectedCategory)
+                      .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -292,7 +336,9 @@ class _HabitScreenState extends State<HabitScreen> {
                         Icon(Icons.add_task, size: 64, color: Colors.grey[400]),
                         const SizedBox(height: 16),
                         Text(
-                          'No habits yet',
+                          _selectedCategory == null
+                              ? 'No habits yet'
+                              : 'No habits in this category',
                           style: TextStyle(
                             fontSize: 18,
                             color: Colors.grey[600],

@@ -8,39 +8,47 @@ class QuotesService {
     {
       'id': 'default1',
       'content': 'Success is not final, failure is not fatal: it is the courage to continue that counts.',
-      'author': 'Winston Churchill'
+      'author': 'Winston Churchill',
+      'tags': ['success', 'failure', 'courage']
     },
     {
       'id': 'default2',
       'content': 'The only way to do great work is to love what you do.',
-      'author': 'Steve Jobs'
+      'author': 'Steve Jobs',
+      'tags': ['work', 'love']
     },
     {
       'id': 'default3',
       'content': 'Believe you can and you\'re halfway there.',
-      'author': 'Theodore Roosevelt'
+      'author': 'Theodore Roosevelt',
+      'tags': ['believe', 'inspirational']
     },
     {
       'id': 'default4',
       'content': 'What you get by achieving your goals is not as important as what you become by achieving your goals.',
-      'author': 'Zig Ziglar'
+      'author': 'Zig Ziglar',
+      'tags': ['goals', 'inspirational']
     },
     {
       'id': 'default5',
       'content': 'The future belongs to those who believe in the beauty of their dreams.',
-      'author': 'Eleanor Roosevelt'
+      'author': 'Eleanor Roosevelt',
+      'tags': ['future', 'dreams', 'inspirational']
     }
   ];
 
-  static Future<List<Quote>> fetchQuotes({int limit = 10}) async {
+  static Future<List<Quote>> fetchQuotes({int limit = 10, List<String>? tags}) async {
     final client = http.Client();
     try {
-      final uri = Uri.parse('https://api.quotable.io/quotes?limit=$limit');
-      
-      
+      String url = 'https://api.quotable.io/quotes?limit=$limit';
+      if (tags != null && tags.isNotEmpty) {
+        url += '&tags=${tags.join(',') }';
+      }
+      final uri = Uri.parse(url);
+
       int retries = 3;
       http.Response? response;
-      
+
       while (retries > 0) {
         try {
           response = await client.get(
@@ -56,14 +64,14 @@ class QuotesService {
               throw TimeoutException('Request timed out');
             },
           );
-          
+
           if (response.statusCode == 200) {
             break;
           }
-          
+
           retries--;
           if (retries > 0) {
-            await Future.delayed(Duration(seconds: 2)); 
+            await Future.delayed(Duration(seconds: 2));
           }
         } catch (e) {
           retries--;
@@ -71,7 +79,7 @@ class QuotesService {
           await Future.delayed(Duration(seconds: 2));
         }
       }
-      
+
       if (response == null) {
         return _getRandomFallbackQuotes();
       }
@@ -83,7 +91,7 @@ class QuotesService {
           final quotes = quotesJson
               .map((json) => Quote.fromJson(json))
               .toList();
-          
+
           if (quotes.isNotEmpty) {
             quotes.shuffle();
             return quotes.take(limit).toList();
@@ -97,6 +105,27 @@ class QuotesService {
     } catch (e) {
       print('Error fetching quotes: $e');
       return _getRandomFallbackQuotes();
+    } finally {
+      client.close();
+    }
+  }
+
+  static Future<List<String>> fetchTags() async {
+    final client = http.Client();
+    try {
+      final uri = Uri.parse('https://api.quotable.io/tags');
+      final response = await client.get(uri);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((tag) => tag['name'] as String).toList();
+      }
+      else {
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching tags: $e');
+      return [];
     } finally {
       client.close();
     }

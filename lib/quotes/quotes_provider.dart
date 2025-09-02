@@ -9,17 +9,20 @@ class QuotesProvider with ChangeNotifier {
   List<Quote> _quotes = [];
   bool _isLoading = false;
   String? _operatingQuoteId;
-  Set<String> _favoriteQuoteContents = {}; 
+  Set<String> _favoriteQuoteContents = {};
   bool _favoritesLoaded = false;
+  List<String> _tags = [];
+  String? _selectedTag;
 
   List<Quote> get quotes => _quotes;
   bool get isLoading => _isLoading;
   bool isFavoriteOperationFor(String quoteId) => _operatingQuoteId == quoteId;
   Set<String> get favoriteQuoteContents => _favoriteQuoteContents;
+  List<String> get tags => _tags;
+  String? get selectedTag => _selectedTag;
 
   String? get userId => FirebaseAuth.instance.currentUser?.uid;
 
-  
   Future<void> loadFavoriteQuotes() async {
     if (userId == null || _favoritesLoaded) return;
 
@@ -54,12 +57,25 @@ class QuotesProvider with ChangeNotifier {
     }
   }
 
-  
   bool isQuoteFavorite(Quote quote) {
     return _favoriteQuoteContents.contains(quote.content);
   }
 
-  // Fetch quotes 
+  Future<void> loadTags() async {
+    try {
+      _tags = await QuotesService.fetchTags();
+      notifyListeners();
+    } catch (e) {
+      print("Error fetching tags: $e");
+    }
+  }
+
+  void setSelectedTag(String? tag) {
+    _selectedTag = tag;
+    loadQuotes();
+  }
+
+  // Fetch quotes
   Future<void> loadQuotes() async {
     if (_isLoading) return;
 
@@ -67,12 +83,12 @@ class QuotesProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      
       if (!_favoritesLoaded) {
         await loadFavoriteQuotes();
       }
 
-      final fetchedQuotes = await QuotesService.fetchQuotes(limit: 30);
+      final fetchedQuotes = await QuotesService.fetchQuotes(
+          limit: 30, tags: _selectedTag != null ? [_selectedTag!] : null);
 
       final uniqueQuotes = <Quote>[];
       final seenContents = <String>{};
@@ -91,7 +107,7 @@ class QuotesProvider with ChangeNotifier {
       }
     } catch (e) {
       print("Error fetching quotes: $e");
-      
+
       if (_quotes.isEmpty) {
         _quotes = await QuotesService.fetchQuotes(limit: 5);
       }
@@ -107,13 +123,13 @@ class QuotesProvider with ChangeNotifier {
       print('Error: User not authenticated');
       throw Exception('User not authenticated');
     }
-        
+
     _operatingQuoteId = quote.id;
     notifyListeners();
 
     try {
       print('Adding favorite: ${quote.id} for user: $userId');
-      
+
       final docRef = FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
@@ -124,9 +140,8 @@ class QuotesProvider with ChangeNotifier {
 
       await docRef.set(quote.toMap());
 
-      
       _favoriteQuoteContents.add(quote.content);
-      
+
       print('Successfully added favorite: ${quote.id}');
     } catch (e) {
       print('Error adding favorite: $e');
@@ -149,7 +164,7 @@ class QuotesProvider with ChangeNotifier {
 
     try {
       print('Removing favorite: $quoteId for user: $userId');
-      
+
       final docRef = FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
@@ -159,13 +174,13 @@ class QuotesProvider with ChangeNotifier {
           .doc(quoteId);
 
       await docRef.delete();
-      
+
       if (content != null) {
         _favoriteQuoteContents.remove(content);
       }
-      
+
       print('Successfully removed favorite: $quoteId');
-      
+
       await Future.delayed(const Duration(milliseconds: 200));
     } catch (e) {
       print('Error removing favorite: $e');
@@ -173,10 +188,9 @@ class QuotesProvider with ChangeNotifier {
     } finally {
       _operatingQuoteId = null;
       notifyListeners();
+    }
   }
-}
 
-  
   Stream<List<Quote>> getFavoriteQuotes() {
     if (userId == null) return Stream.value([]);
 
@@ -188,23 +202,22 @@ class QuotesProvider with ChangeNotifier {
         .collection('list')
         .snapshots()
         .map((snapshot) {
-          print('Favorites snapshot received: ${snapshot.docs.length} quotes');
-          return snapshot.docs
-              .map((doc) {
-                try {
-                  return Quote.fromJson(doc.data());
-                } catch (e) {
-                  print('Error parsing quote from document ${doc.id}: $e');
-                  return null;
-                }
-              })
-              .where((quote) => quote != null)
-              .cast<Quote>()
-              .toList();
-        });
+      print('Favorites snapshot received: ${snapshot.docs.length} quotes');
+      return snapshot.docs
+          .map((doc) {
+        try {
+          return Quote.fromJson(doc.data());
+        } catch (e) {
+          print('Error parsing quote from document ${doc.id}: $e');
+          return null;
+        }
+      })
+          .where((quote) => quote != null)
+          .cast<Quote>()
+          .toList();
+    });
   }
 
-  
   Future<void> refreshFavorites() async {
     _favoritesLoaded = false;
     await loadFavoriteQuotes();
